@@ -1,0 +1,146 @@
+---
+title: 'GET: Fetch a custom accounting field'
+description: 'Get a specific custom accounting field'
+method: 'GET'
+endpoint: '/developer/v1/accounting/fields/{id}'
+---
+
+<TableOfContents />
+
+## Overview
+
+Fetch a specific custom accounting field by ID.
+
+<RequestExample>
+```bash
+curl \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/fields/field_1234567890'
+```
+</RequestExample>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the custom field to retrieve.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "created_at": "2021-01-01T00:00:00Z",
+    "display_name": "Department",
+    "id": "field_1234567890",
+    "input_type": "SINGLE_CHOICE",
+    "is_required": false,
+    "is_splittable": true,
+    "name": "Department",
+    "ramp_id": "46910cc3-ab41-4b80-b4a7-94dab9f1b795",
+    "updated_at": "2021-01-01T00:00:00Z"
+  }
+}
+```
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  The custom accounting field details.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string<date-time>">
+  The date and time the field was created.
+</ResponseField>
+
+<ResponseField name="data.display_name" type="string">
+  User-friendly display name for the field.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  The unique identifier for the field.
+</ResponseField>
+
+<ResponseField name="data.input_type" type="string">
+  Type of input field.
+  
+  **Allowed values:**
+  - `SINGLE_CHOICE` - Single selection dropdown
+  - `MULTIPLE_CHOICE` - Multiple selection options
+  - `TEXT` - Free text input
+  - `BOOLEAN` - True/false checkbox
+</ResponseField>
+
+<ResponseField name="data.is_required" type="boolean">
+  Whether the field is required for transactions.
+</ResponseField>
+
+<ResponseField name="data.is_splittable" type="boolean">
+  Whether the field can be split across multiple transactions.
+</ResponseField>
+
+<ResponseField name="data.name" type="string">
+  Internal name for the field.
+</ResponseField>
+
+<ResponseField name="data.ramp_id" type="string<uuid>">
+  ID to uniquely identify a custom field within Ramp system.
+</ResponseField>
+
+<ResponseField name="data.updated_at" type="string<date-time>">
+  The date and time the field was last updated.
+</ResponseField>
+
+<Note>
+  **OAuth scopes required:** `accounting:read`
+</Note>
+
+## Examples
+
+### JavaScript
+
+```javascript
+const fieldId = 'field_1234567890';
+const response = await fetch(`https://api.ramp.com/developer/v1/accounting/fields/${fieldId}`, {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${RAMP_API_TOKEN}`
+  }
+});
+
+const data = await response.json();
+console.log(data.data);
+```
+
+### Python
+
+```python
+import requests
+
+field_id = 'field_1234567890'
+headers = {
+    'Accept': 'application/json',
+    'Authorization': f'Bearer {RAMP_API_TOKEN}'
+}
+
+response = requests.get(
+    f'https://api.ramp.com/developer/v1/accounting/fields/{field_id}',
+    headers=headers
+)
+
+data = response.json()
+print(data['data'])
+```
+
+### cURL
+
+```bash
+curl \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/fields/field_1234567890'
+``` 

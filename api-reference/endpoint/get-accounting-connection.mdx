@@ -1,0 +1,126 @@
+---
+title: 'GET: Get accounting connection'
+description: 'Get a specific accounting connection'
+method: 'GET'
+endpoint: '/developer/v1/accounting/connections/{id}'
+---
+
+<TableOfContents />
+
+## Overview
+
+Get a specific accounting connection by ID.
+
+<RequestExample>
+```bash
+curl \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/connections/46910cc3-ab41-4b80-b4a7-94dab9f1b795'
+```
+</RequestExample>
+
+## Path Parameters
+
+<ParamField path="id" type="string<uuid>" required>
+  The ID of the accounting connection to retrieve.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "created_at": "2021-01-01T00:00:00Z",
+    "id": "46910cc3-ab41-4b80-b4a7-94dab9f1b795",
+    "last_linked_at": "2021-01-01T00:00:00Z",
+    "remote_provider_name": "Quickbooks",
+    "status": "LINKED"
+  }
+}
+```
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  The accounting connection details.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string<date-time>">
+  The date and time the accounting connection was created.
+</ResponseField>
+
+<ResponseField name="data.id" type="string<uuid>">
+  The unique identifier for the accounting connection.
+</ResponseField>
+
+<ResponseField name="data.last_linked_at" type="string<date-time> or null">
+  The date and time the accounting connection was last connected.
+</ResponseField>
+
+<ResponseField name="data.remote_provider_name" type="string or null">
+  The name of the accounting connection.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  The current status of the accounting connection.
+  
+  **Allowed values:**
+  - `failed_to_auth` - Authentication failed
+  - `linked` - Successfully linked
+  - `revoked` - Access was revoked
+  - `unlinked` - Connection was unlinked
+</ResponseField>
+
+<Note>
+  **OAuth scopes required:** `accounting:read`
+</Note>
+
+## Examples
+
+### JavaScript
+
+```javascript
+const connectionId = '46910cc3-ab41-4b80-b4a7-94dab9f1b795';
+const response = await fetch(`https://api.ramp.com/developer/v1/accounting/connections/${connectionId}`, {
+  method: 'GET',
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${RAMP_API_TOKEN}`
+  }
+});
+
+const data = await response.json();
+console.log(data.data);
+```
+
+### Python
+
+```python
+import requests
+
+connection_id = '46910cc3-ab41-4b80-b4a7-94dab9f1b795'
+headers = {
+    'Accept': 'application/json',
+    'Authorization': f'Bearer {RAMP_API_TOKEN}'
+}
+
+response = requests.get(
+    f'https://api.ramp.com/developer/v1/accounting/connections/{connection_id}',
+    headers=headers
+)
+
+data = response.json()
+print(data['data'])
+```
+
+### cURL
+
+```bash
+curl \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/connections/46910cc3-ab41-4b80-b4a7-94dab9f1b795'
+``` 

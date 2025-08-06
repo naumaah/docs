@@ -1,0 +1,415 @@
+---
+title: 'Getting Started'
+description: 'Learn how to authenticate and make your first API call to Ramp'
+---
+
+<TableOfContents />
+
+## Overview
+
+Welcome to the Ramp Developer API! This guide will help you get started with integrating Ramp's spend management platform into your application. The Ramp API provides access to corporate cards, expense management, and accounting automation features.
+
+## Understanding environments
+
+The Ramp API supports two environments:
+
+- **Production**: `https://api.ramp.com/v1` - For live applications
+- **Sandbox**: `https://api.ramp.com/v1/sandbox` - For testing and development
+
+<Note>
+  Use the sandbox environment for development and testing. All data in sandbox is test data and won't affect your production account.
+</Note>
+
+## Quickstart: Authorize with Client Credentials
+
+The client credentials flow is the simplest way to get started with the Ramp API. This flow is ideal for server-to-server applications where you're building on behalf of a single Ramp customer.
+
+<Warning title="Permission Required">
+  API access requires ADMIN or IT_ADMIN role. If you don't see "Developer API" in your Ramp account or get permission errors, contact your Ramp administrator to upgrade your permissions. Managers and regular users cannot create apps or generate tokens.
+</Warning>
+
+### 1. Create a Developer App
+
+First, create a developer app in the Ramp Developer Portal:
+
+<Steps>
+  <Step title="Go to Developer Portal">
+    Visit [developer.ramp.com](https://developer.ramp.com) and sign in with your Ramp account.
+  </Step>
+  <Step title="Create New App">
+    Click "Create New App" and fill in the app details:
+    - **App Name**: Your application name
+    - **Description**: Brief description of your app
+    - **Redirect URI**: Your app's callback URL (for authorization code flow)
+  </Step>
+  <Step title="Save Credentials">
+    Save your app and note the **Client ID** and **Client Secret**.
+  </Step>
+</Steps>
+
+<Warning>
+  Keep your client secret secure and never expose it in client-side code or public repositories.
+</Warning>
+
+### 2. Request an Access Token
+
+Use your client credentials to request an access token. Here's how to make the request:
+
+<CodeGroup dropdown>
+```bash Request
+curl -X POST "https://api.ramp.com/v1/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=client_credentials" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET"
+```
+
+```javascript Request expandable
+const endpoint = '{environment-url}/developer/v1/token'
+const clientId = process.env.CLIENT_ID
+const clientSecret = process.env.CLIENT_SECRET
+
+const headers = {
+  'Authorization': `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+  'Content-Type': 'application/x-www-form-urlencoded',
+}
+
+const body = new URLSearchParams({
+  grant_type: 'client_credentials',
+  scope: 'transactions:read'
+})
+
+fetch(endpoint, { method: 'POST', headers, body })
+  .then(res => res.json())
+  .then(console.log)
+```
+
+```python Request expandable
+import os, base64, requests
+
+client_id = os.getenv("CLIENT_ID")
+client_secret = os.getenv("CLIENT_SECRET")
+
+auth = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
+
+headers = {
+  "Authorization": f"Basic {auth}",
+  "Content-Type": "application/x-www-form-urlencoded"
+}
+
+data = {
+  "grant_type": "client_credentials",
+  "scope": "transactions:read"
+}
+
+resp = requests.post("{environment-url}/developer/v1/token", headers=headers, data=data)
+print(resp.json())
+```
+</CodeGroup>
+
+You'll receive a response like this:
+
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "scope": "read write"
+}
+```
+
+Copy the `access_token` – you’ll use it to authenticate your API calls.
+
+<Note>
+  Access and refresh tokens should never be transmitted or stored without encryption.
+</Note>
+
+### 3. Make an API Call
+
+Use the access token to make API calls:
+
+<CodeGroup dropdown>
+```bash Request
+curl -X GET "https://api.ramp.com/v1/accounts" \
+  -H "Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json"
+```
+
+```javascript Request 
+fetch('{environment-url}/developer/v1/transactions', {
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Accept': 'application/json'
+  }
+})
+  .then(res => res.json())
+  .then(console.log)
+```
+
+```python Request 
+headers = {
+  "Authorization": f"Bearer {access_token}",
+  "Accept": "application/json"
+}
+response = requests.get("{environment-url}/developer/v1/transactions", headers=headers)
+print(response.json())
+```
+</CodeGroup>
+
+## FAQ: Client credentials flow
+
+<AccordionGroup>
+  <Accordion title="Why is my token request failing?">
+    Common troubleshooting steps:
+    - Ensure the grant type is enabled in the Developer App settings.
+    - Double check scope is included and matches allowed scopes.
+    - Confirm base64 encoding is correctly applied.
+    - Make sure you're using the right URL for Sandbox or Production.
+  </Accordion>
+  <Accordion title="Why is my API call returning a 401?">
+    - Your token might be expired
+    - Ensure you're using `Authorization: Bearer <access_token>`
+    - Make sure the token matches the environment you're calling.
+  </Accordion>
+  <Accordion title="How long do tokens last?">
+    - Client Credentials tokens expire after ~10 days (864000 seconds).
+    - You can always request a new one using the same client credentials.
+  </Accordion>
+  <Accordion title="Can I rotate credentials?">
+    Yes. You can regenerate your client secret from the Developer App settings.
+  </Accordion>
+</AccordionGroup>
+
+## Authorization code: For multi-customer apps
+
+<Card title="Multi-Customer Flow" img="/images/Oauth-Diagram.png">
+  The authorization code flow is designed for applications that need to access multiple Ramp customers' data. This flow involves user consent and is more secure for multi-tenant applications.
+</Card>
+
+### Step 1: User is redirected to Ramp authorization URL
+
+There are five required parameters in this request:
+
+<ParamField path="response_type" type="string" required>
+  Must be set to <code>code</code>.
+</ParamField>
+
+<ParamField path="scope" type="string" required>
+  Space-separated list of scopes (e.g., <code>transactions:read business:read</code>).
+</ParamField>
+
+<ParamField path="client_id" type="string" required>
+  Your app’s client ID from the Ramp Developer Console.
+</ParamField>
+
+<ParamField path="redirect_uri" type="string" required>
+  Must match exactly one of the URIs configured in your app.
+</ParamField>
+
+<ParamField path="state" type="string" required>
+  Protects against CSRF; should be unique and verifiable by your app.
+</ParamField>
+
+**Example URL**
+<CodeBlock language="bash">
+https://app.ramp.com/v1/authorize?response_type=code&amp;client_id=YOUR_CLIENT_ID&amp;redirect_uri=https://yourapp.com/callback&amp;scope=transactions:read%20business:read&amp;state=random_csrf_token
+</CodeBlock>
+
+Your application must direct the user to Ramp’s OAuth authorization endpoint. This initiates the flow by asking the user to log in and approve your app.
+
+### Step 2: User authenticates and approves access
+
+<Note title="Admin consent required">
+  **_Admin consent is required_**
+
+  Only users with Admin or Business Owner roles can authorize third-party applications. If a user with insufficient permissions attempts to authorize your app, they will receive a "Business not authorized to use this application" error.
+</Note>
+
+<Steps>
+  <Step title="Sign In">
+    Sign in to their Ramp account
+  </Step>
+  <Step title="Review Permissions">
+    Review the requested permissions for your application
+  </Step>
+  <Step title="Approve Access">
+    Approve or deny access to your application
+  </Step>
+</Steps>
+
+<Card title="Access Approval">
+  <img src="/images/App-Approval.png" alt="App approval" style={{ width: "200px", marginBottom: "1rem" }} />
+  The user logs in to Ramp and is shown a screen prompting them to approve your app's requested access.
+</Card>
+
+
+### Step 3: Exchange the code for an access token
+
+After approval, Ramp redirects back to your app with an authorization code. Exchange this code for an access token:
+
+<CodeGroup dropdown>
+```bash Exchange code for access token
+curl -X POST "https://api.ramp.com/v1/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=authorization_code" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "code=AUTHORIZATION_CODE" \
+  -d "redirect_uri=YOUR_REDIRECT_URI"
+```
+
+```javascript Exchange code for access token expandable
+const tokenUrl = '{environment-url}/developer/v1/token'
+const auth = btoa(`${clientId}:${clientSecret}`)
+const params = new URLSearchParams({
+  grant_type: 'authorization_code',
+  code: 'AUTH_CODE_HERE',
+  redirect_uri: 'https://yourapp.com/callback'
+})
+
+fetch(tokenUrl, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Basic ${auth}`,
+    'Content-Type': 'application/x-www-form-urlencoded'
+  },
+  body: params
+})
+  .then(res => res.json())
+  .then(console.log)
+```
+
+```python Exchange code for access token expandable
+headers = {
+  "Authorization": f"Basic {auth}",
+  "Content-Type": "application/x-www-form-urlencoded"
+}
+
+data = {
+  "grant_type": "authorization_code",
+  "code": "AUTH_CODE_HERE",
+  "redirect_uri": "https://yourapp.com/callback"
+}
+
+resp = requests.post("{environment-url}/developer/v1/token", headers=headers, data=data)
+print(resp.json())
+```
+</CodeGroup>
+
+
+### Step 4: Refresh the access token
+
+When the access token expires, use the refresh token to get a new one:
+
+<CodeGroup dropdown>
+```bash Refreshing access token 
+curl -X POST "https://api.ramp.com/v1/oauth/token" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "grant_type=refresh_token" \
+  -d "client_id=YOUR_CLIENT_ID" \
+  -d "client_secret=YOUR_CLIENT_SECRET" \
+  -d "refresh_token=REFRESH_TOKEN"
+```
+
+```javascript Refreshing access token expandable
+const tokenUrl = '{environment-url}/developer/v1/token'
+const auth = btoa(`${clientId}:${clientSecret}`)
+
+const params = new URLSearchParams({
+  grant_type: 'refresh_token',
+  refresh_token: 'REFRESH_TOKEN_HERE'
+})
+
+fetch(tokenUrl, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Basic ${auth}`,
+    'Content-Type': 'application/x-www-form-urlencoded'
+  },
+  body: params
+})
+  .then(res => res.json())
+  .then(console.log)
+```
+
+```python Refreshing access token
+headers = {
+  "Authorization": f"Basic {auth}",
+  "Content-Type": "application/x-www-form-urlencoded"
+}
+
+data = {
+  "grant_type": "refresh_token",
+  "refresh_token": "REFRESH_TOKEN_HERE"
+}
+
+resp = requests.post("{environment-url}/developer/v1/token", headers=headers, data=data)
+print(resp.json())
+``` 
+</CodeGroup>
+
+## FAQ: Authorization code flow
+
+<AccordionGroup>
+  <Accordion title="My customer gets 'Business not authorized to use this application' - what's wrong?">
+    - Only users with Admin or Business Owner roles can authorize third-party applications
+    - Ask your customer to have an Admin or Business Owner complete the authorization flow
+    - Regular users cannot grant OAuth2 permissions for security reasons  
+  </Accordion>
+  <Accordion title="How do I know if my customer has the right permissions?">
+    - The customer should verify their role in Settings > Team
+    - Admin and Business Owner roles are clearly labeled in the Ramp UI
+    - If uncertain, they should contact their Ramp administrator
+  </Accordion>
+</AccordionGroup>
+
+## Next steps
+
+Now that you understand authentication, explore these resources:
+
+<CardGroup cols={2}>
+  <Card title="Accounting Integration Guide" icon="book" href="/guides/accounting">
+    Complete API documentation with all endpoints
+  </Card>
+  <Card title="Webhooks" icon="bell" href="https://docs.ramp.com/developer-api/v1/webhooks">
+    Set up real-time notifications _(Mintlify docs coming soon...)_
+  </Card>
+  <Card title="Bill Pay" icon="code" href="https://docs.ramp.com/developer-api/v1/guides/bill-pay">
+    Use our official SDKs for faster development _(Mintlify docs coming soon...)_
+  </Card>
+  <Card title="All Developer Guides" icon="star" href="/">
+    Learn API best practices and patterns
+  </Card>
+</CardGroup>
+
+## Reference Documentation
+<CardGroup cols={2}>
+  <Card title="Authorization Guide" icon="grip-lines" href="https://docs.ramp.com/developer-api/v1/authorization">
+    Complete OAuth 2.0 reference with scopes and security _(Mintlify docs coming soon...)_
+  </Card>
+  <Card title="Rate Limiting" icon="x" href="https://docs.ramp.com/developer-api/v1/rate-limiting">
+    Avoid hitting API limits _(Mintlify docs coming soon...)_
+  </Card>
+  <Card title="Error Handling" icon="circle-exclamation" href="https://docs.ramp.com/developer-api/v1/error-handling">
+    Handle API errors gracefully _(Mintlify docs coming soon...)_
+  </Card>
+  <Card title="API Changelog" icon="text" href="/changelog">
+    Stay updated on API changes
+  </Card>
+</CardGroup>
+
+<Info>
+  For detailed API specifications, see our [OpenAPI documentation](/api-reference/openapi.json) or explore the interactive API playground.
+</Info>
+
+## Support
+
+Need help? Our developer support team is here to assist:
+
+<Card title="Email Support" icon="paper-plane" href="mailto:support@ramp.com" horizontal>
+  Get help from our developer support team
+</Card>
+
+<Tip>
+  Include your request ID (found in error responses) when contacting support for faster resolution.
+</Tip>

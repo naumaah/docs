@@ -1,0 +1,234 @@
+---
+title: 'Changelog'
+description: 'Latest updates and changes to the Ramp Developer API'
+---
+
+<TableOfContents />
+
+## Overview
+
+This changelog tracks all updates, new features, and breaking changes to the Ramp Developer API. We recommend subscribing to our developer newsletter to stay informed about upcoming changes.
+
+## June 24, 2024
+
+### API Updates and Improvements
+
+<CardGroup cols={2}>
+  <Card title="Filter Purchase Orders" icon="filter">
+    Use <code>spend_start_date</code> and <code>spend_end_date</code> to retrieve POs tied to a specific spend window.
+  </Card>
+  <Card title="Mileage Reimbursements" icon="car">
+    New endpoint: <code>POST /reimbursement/mileage</code> — Log and submit mileage reimbursements via API.
+  </Card>
+  <Card title="Transaction Filtering" icon="clock">
+    Filter transactions by update timestamp — <code>GET /transactions</code> now supports the <code>updated_after</code> filter for incremental syncs.
+  </Card>
+  <Card title="Search by Remote ID" icon="search">
+    Search accounting vendors and GL accounts by <code>remote_id</code> — Simplifies mapping to ERP systems.
+  </Card>
+  <Card title="Bill-PO Matching" icon="link">
+    Match bills to purchase orders — Enables programmatic linkage between bills and POs.
+  </Card>
+  <Card title="Manager Status" icon="user">
+    Include <code>is_manager</code> in user invites — Supports setting manager status when inviting a user via API.
+  </Card>
+  <Card title="PO Filtering" icon="filter">
+    Filter purchase orders by <code>user_id</code> — Use <code>GET /purchase-orders</code> with <code>user_id</code> to retrieve POs submitted by a specific user.
+  </Card>
+  <Card title="Accounting Date" icon="calendar">
+    <code>accounting_date</code> now returned in reimbursements — Available via <code>GET /reimbursements</code> for improved reconciliation workflows.
+  </Card>
+  <Card title="Receipt Submission" icon="file-upload">
+    New endpoint: <code>POST /reimbursements/submit-receipt</code> — Attach receipts directly to reimbursements via API.
+  </Card>
+  <Card title="OCR Auto-matching" icon="magic">
+    Auto-match uploaded receipts using OCR — <code>POST /receipts</code> can now automatically associate receipts with matching transactions.
+  </Card>
+  <Card title="Temporary Limits" icon="chart-line">
+    Temporary limit increases — Use <code>PATCH /limits/{limit_id}</code> to implement temporary spending limit boosts.
+  </Card>
+  <Card title="Declined Transactions" icon="eye-slash">
+    Control declined transaction visibility — <code>GET /transactions</code> now defaults to excluding declines. Use <code>state=DECLINED</code> or <code>state=ALL</code> to include them.
+  </Card>
+  <Card title="Accounting Field Search" icon="search">
+    Search by accounting field selections — Filter transactions and bills based on assigned accounting fields for better categorization.
+  </Card>
+  <Card title="Custom Forms" icon="file-text">
+    Custom forms support — Retrieve and manage custom form metadata on Vendors, Purchase Orders, Transactions, and Limits using GET endpoints.
+  </Card>
+</CardGroup>
+
+## May 15, 2024
+
+### API Updates
+
+<CardGroup cols={2}>
+  <Card title="Connection Reactivation" icon="refresh">
+    New endpoint <code>POST /connection/&lt;uuid:connection_id&gt;/reactivate</code>
+  </Card>
+  <Card title="Display Name Support" icon="edit">
+    Support for specifying <code>display_name</code> on <code>POST /accounting/fields</code>
+  </Card>
+  <Card title="Card Present Field" icon="credit-card">
+    New field <code>card_present</code> to <code>GET /transactions</code>
+  </Card>
+  <Card title="Employee Filtering" icon="user">
+    Filter by <code>employee_id</code> for <code>GET /transactions</code> and <code>GET /reimbursements</code>
+  </Card>
+  <Card title="Custom Field Updates" icon="edit">
+    Support for updating accounting custom field <code>display_name</code>
+  </Card>
+  <Card title="Bill Accounting Date" icon="calendar">
+    New field <code>accounting_date</code> to <code>GET /bills</code>
+  </Card>
+  <Card title="Vendor Payment Details" icon="envelope">
+    Support for requesting payment and tax details via email on <code>POST /vendors</code>
+  </Card>
+  <Card title="Connection Deprecation" icon="warning">
+    **Deprecated**: <code>GET /accounting/connection</code> in favor of <code>GET /accounting/all-connections</code>
+  </Card>
+  <Card title="Approval Filtering" icon="user-check">
+    Filter by <code>awaiting_approval_by_user_id</code> in <code>GET /transactions</code> and <code>GET /reimbursements</code>
+  </Card>
+</CardGroup>
+
+## April 28, 2024
+
+### API Updates
+
+<CardGroup cols={2}>
+  <Card title="Vendor Creation" icon="plus">
+    Support for creating vendors when approval policies are in place
+  </Card>
+  <Card title="Bill Filtering" icon="filter">
+    Filter bills by <code>payee_id</code> and <code>sync_status</code> parameters
+  </Card>
+  <Card title="Vendor Addresses" icon="map-marker">
+    Support for managing vendor addresses via vendor APIs
+  </Card>
+  <Card title="Employee ID on User Creation" icon="user-plus">
+    Ability to specify <code>employee_id</code> on user creation
+  </Card>
+  <Card title="Connection Status" icon="info">
+    New fields <code>status</code> and <code>last_linked_at</code> to <code>GET /accounting/connections</code>
+  </Card>
+  <Card title="Transaction Accounting Date" icon="calendar">
+    New field <code>transaction_accounting_date</code> to transactions APIs
+  </Card>
+  <Card title="Approval Status Filter" icon="check">
+    Filter transactions by <code>approval_status</code> parameter
+  </Card>
+  <Card title="Custom Field Options" icon="filter">
+    Filter accounting custom field options by <code>remote_code</code> parameter
+  </Card>
+</CardGroup>
+
+## April 15, 2024
+
+### Procurement API Beta (Ramp Plus Customers Only)
+
+<Card title="Procurement Workflow" icon="shopping-cart">
+  **Beta**: Manage your Purchase Orders and Item Receipts for your procurement workflow
+  
+  **Coming Soon**: Create Purchase Orders with optional three-way matching with Item Receipts
+  
+  **Availability**: Currently available to Ramp Plus and Enterprise customers via white-glove rollout. Contact your Ramp representative for more information.
+</Card>
+
+## March 24, 2024
+
+### Ramp MCP Server
+
+<Card title="LLM-Friendly SQL Interface" icon="database">
+  Ramp MCP Server enables developers to expose business data through an LLM-friendly SQL interface
+  
+  Available as a Python package with support for custom tools, data loaders, and SQL execution
+  
+  <CardGroup cols={2}>
+    <Card title="GitHub" icon="github" href="https://github.com/ramp-ai/ramp-mcp-server">
+      View on GitHub
+    </Card>
+    <Card title="Blog Post" icon="external-link" href="https://ramp.com/blog/llm-reporting-automation">
+      Read our blog post for information on LLM-based reporting and automation
+    </Card>
+  </CardGroup>
+</Card>
+
+## March 16, 2024
+
+### API Updates
+
+<CardGroup cols={2}>
+  <Card title="Sync Status Field" icon="sync">
+    New <code>sync_status</code> field to Transactions, Reimbursements, Transfers, and Cashbacks for tracking sync state
+  </Card>
+  <Card title="Sync Status Filter" icon="filter">
+    Filter with <code>sync_status</code> query parameter to retrieve records based on their sync state
+  </Card>
+  <Card title="Remote ID Query" icon="search">
+    Query Accounting Custom Fields and Options by <code>remote_id</code> parameter for easier external system mapping
+  </Card>
+  <Card title="Required Fields" icon="asterisk">
+    Mark Accounting Custom Fields as required to enforce validation before sync-ready status
+  </Card>
+</CardGroup>
+
+## February 24, 2024
+
+### Custom Records Beta (Ramp Plus Customers Only)
+
+<Card title="Advanced Workflows" icon="cogs">
+  **Beta**: Add custom fields to users (e.g., Cost Center, Division, Custom Approvers) for advanced workflows
+  
+  Define and manage custom or native tables via CSV, SCIM, or API
+  
+  Query and update custom data via API for dynamic approvals and reporting
+  
+  **Availability**: Currently available to Ramp Plus and Enterprise customers via white-glove rollout
+</Card>
+
+## February 9, 2024
+
+### Bank Account API
+
+<Card title="Bank Account Information" icon="university">
+  New endpoint <code>GET /developer/v1/bank-accounts/{bank_account_id}</code> to retrieve linked bank account information
+</Card>
+
+## January 16, 2024
+
+### Bills and Vendors API Beta
+
+<Card title="Accounts Payable Workflows" icon="file-invoice">
+  **Beta**: Manage vendors, bills, and payments via API for your Accounts Payable workflows
+  
+  All endpoints are accessible in both Sandbox and Production environments
+  
+  Support for creating, updating, deleting, and retrieving Vendors, Vendor Contacts, and Bills
+</Card>
+
+## April 30, 2024
+
+### Deprecation Notice: Cards API
+
+<Warning>
+  **Deprecated**: Ramp is transitioning from the Cards API to the more flexible Limits API
+  
+  Use the Limits API for card issuance and management functionality
+  
+  The Limits API enables one-to-many relationships between limits and cards and shared limits across users
+  
+  Physical card shipping will continue to be supported via the Cards API until full migration support is provided
+</Warning>
+
+## Support
+
+Need help with API updates?
+
+<Card title="Email Support" icon="paper-plane" href="mailto:support@ramp.com" horizontal>
+  Get help from our developer support team
+</Card>
+
+<Tip>
+  Include your request ID (found in error responses) when contacting support for faster resolution.
+</Tip>
