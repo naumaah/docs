@@ -1,33 +1,72 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: 'API Reference'
+description: "Complete API reference for Ramp's Developer API"
+icon: "code"
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Welcome to Ramp's API Reference
 
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+This section provides comprehensive documentation for all Ramp Developer API endpoints. You can explore the API using our interactive playground or browse the detailed endpoint documentation.
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All Ramp API endpoints require authentication using API keys. Include your API key in the `Authorization` header of every request.
+
+```bash
+Authorization: Bearer YOUR_API_KEY
+```
+
+<Warning>
+  Keep your API key secure and never expose it in client-side code or public
+  repositories.
+</Warning>
+
+## Base URL
+
+All API requests should be made to:
+
+```
+https://api.ramp.com/v1
+```
+
+## Rate Limits
+
+- **Standard tier**: 1,000 requests per minute
+- **Enterprise tier**: 10,000 requests per minute
+
+<Info>
+  Rate limit headers are included in all responses: - `X-RateLimit-Limit`: Your
+  rate limit - `X-RateLimit-Remaining`: Requests remaining in the current window
+  - `X-RateLimit-Reset`: Time when the rate limit resets (Unix timestamp)
+</Info>
+
+## Error Handling
+
+The API returns standard HTTP status codes and detailed error messages:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "error": {
+    "code": "invalid_api_key",
+    "message": "The provided API key is invalid",
+    "request_id": "req_1234567890"
   }
-]
+}
 ```
+
+## Available Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Accounting Connections" icon="link" href="/api-reference/endpoint/get-accounting-connections">
+    Fetch all accounting connections for the current business
+  </Card>
+  <Card title="Accounting Connection" icon="link" href="/api-reference/endpoint/get-accounting-connection">
+    Get a specific accounting connection by ID
+  </Card>
+  <Card title="Custom Accounting Fields" icon="code" href="/api-reference/endpoint/list-accounting-fields">
+    List and manage custom accounting fields
+  </Card>
+  <Card title="Create Custom Field" icon="code" href="/api-reference/endpoint/create-accounting-field">
+    Create a new custom accounting field
+  </Card>
+</CardGroup>

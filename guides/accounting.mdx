@@ -1,0 +1,455 @@
+---
+title: 'Accounting Integration'
+description: 'Learn how to integrate Ramp with your accounting software'
+---
+
+<Note>
+  <span style={{ fontWeight: 600, fontSize: "1.05rem" }}>
+    Target Audience
+  </span><br />
+  This guide is targeted towards developers building a connection between Ramp and a remote accounting/ERP system.
+</Note>
+
+
+<TableOfContents />
+
+## Overview
+
+Ramp's API can be used to keep data in sync between Ramp and an external accounting system. Before building an accounting connection, familiarize yourself with the basics of Ramp's accounting features via our [Help Center](https://help.ramp.com/accounting) or this [video overview](https://www.youtube.com/watch?v=ramp-accounting-overview).
+
+## Relevant Endpoints
+
+<CardGroup cols={2}>
+  <Card title="Accounting Connections" icon="link" href="/api-reference/endpoint/get-accounting-connections">
+    Fetch all accounting connections for the current business
+  </Card>
+  <Card title="Accounting Connection" icon="link" href="/api-reference/endpoint/get-accounting-connection">
+    Get a specific accounting connection by ID
+  </Card>
+  <Card title="Custom Accounting Fields" icon="code" href="/api-reference/endpoint/list-accounting-fields">
+    List and manage custom accounting fields
+  </Card>
+  <Card title="Create Custom Field" icon="code" href="/api-reference/endpoint/create-accounting-field">
+    Create a new custom accounting field
+  </Card>
+  <Card title="Custom Field Options" icon="list" href="/api-reference/endpoint/get-accounting-field-options">
+    List options for custom accounting fields
+  </Card>
+  <Card title="Upload Field Options" icon="upload" href="/api-reference/endpoint/upload-field-options">
+    Upload new options for custom accounting fields
+  </Card>
+</CardGroup>
+
+## Understanding the Accounting Connection
+
+When working with the Accounting APIs, it's crucial to understand the behavior of the Accounting Connection. A single Ramp account can only have one active accounting connection at a time. Each accounting connection is uniquely associated with its own set of:
+
+- Accounting Custom Fields
+- Accounting Vendors
+- Accounting GL Accounts
+- [Accounting Rules](https://help.ramp.com/accounting-rules)
+
+Switching the accounting connection will result in a loss of data from these fields and rules, but it is possible to re-activate a connection which will restore them.
+
+Within Ramp, you can view the current Accounting Connection within the Settings drawer on the Accounting tab:
+
+<Card title="Accounting Tab" img="/images/Quickbook-Settings.png">
+  You can check the status of an account’s accounting connection by using the Fetch Accounting Connection endpoint.
+</Card>
+
+Ramp offers three different ways to connect with accounting systems, each with their own benefits and use cases.
+
+### Direct Connection
+
+Direct connections provide real-time synchronization with supported accounting platforms. These connections offer the most seamless experience with automatic categorization and immediate data sync.
+
+**Supported Platforms:**
+- QuickBooks Online
+- Xero
+- NetSuite
+- Sage Intacct
+
+**Benefits:**
+- Real-time synchronization
+- Automatic categorization
+- Bidirectional data flow
+- Error handling and retry logic
+
+### Universal CSV Connection
+
+The Universal CSV connection allows you to export Ramp data in CSV format for import into any accounting system that supports CSV imports.
+
+**Features:**
+- Customizable export format
+- Scheduled exports
+- Support for all accounting systems
+- Manual import process
+
+### Developer API Connection
+
+The Developer API connection gives you full programmatic control over data synchronization. This is ideal for custom integrations or when you need to transform data before sending it to your accounting system.
+
+**Capabilities:**
+- Custom data transformation
+- Flexible sync scheduling
+- Error handling and retry logic
+- Full control over the sync process
+
+## API Behavior Comparison
+
+| Feature | Direct Connection | Universal CSV | Developer API |
+|---------|------------------|---------------|---------------|
+| Real-time sync | ✅ | ❌ | ✅ |
+| Automatic categorization | ✅ | ❌ | ⚠️ Manual |
+| Bidirectional sync | ✅ | ❌ | ⚠️ Read-only |
+| Error handling | ✅ | ❌ | ⚠️ Manual |
+| Custom transformations | ❌ | ❌ | ✅ |
+| Setup complexity | Low | Low | High |
+
+## Migrating Connections
+
+When migrating from one connection type to another, follow these steps to ensure a smooth transition.
+
+### Pre-Migration Checklist
+
+- [ ] Backup all current accounting data
+- [ ] Document current sync rules and mappings
+- [ ] Test the new connection in a sandbox environment
+- [ ] Plan the migration during low-activity periods
+- [ ] Notify stakeholders of the migration
+
+### Migration Process
+
+1. **Create the new connection** using the appropriate method
+2. **Configure sync settings** to match your current setup
+3. **Test the connection** with a small dataset
+4. **Disable the old connection** once testing is complete
+5. **Enable the new connection** and monitor for issues
+
+## Building an Accounting Integration
+
+### Chart of Accounts
+
+The chart of accounts is the foundation of your accounting system. It defines the structure and organization of your financial data.
+
+#### Batch Upload Limits
+
+When uploading chart of accounts data, several endpoints support batch operations with specific limits:
+
+<CardGroup cols={2}>
+  <Card title="General Ledger Accounts" icon="list">
+    **Up to 500 accounts per API call**
+  </Card>
+  <Card title="Accounting Vendors" icon="building">
+    **Up to 500 vendors per API call**
+  </Card>
+  <Card title="Custom Field Options" icon="code">
+    **Up to 500 options per API call**
+  </Card>
+  <Card title="Accounting Syncs" icon="rotate">
+    **Up to 500 (beta) or 5,000 (production) sync records per API call**
+  </Card>
+</CardGroup>
+
+<Warning>
+  **Important**: These limits apply per API call, not as total limits. You can make multiple API calls to upload more than the per-call limit. For example, to upload 2,000 custom field options, you would make 4 separate API calls with 500 options each.
+</Warning>
+
+<Note>
+  All batch operations use "all-or-nothing" processing - if any item in a batch fails validation, the entire batch is rejected.
+</Note>
+
+#### Classification Types
+
+There are four types of classifications that can be used to code objects on Ramp:
+
+| Type | Behavior |
+|------|----------|
+| **Entities** | • Always required<br/>• API is read-only, must be configured in the UI |
+| **Accounting Custom Fields** | • Not required<br/>• Supports Boolean, single choice, and free text fields |
+| **Accounting GL Accounts** | • Always required<br/>• Supports Codes, Names, and IDs |
+| **Accounting Vendors** | • Not required<br/>• Always a single choice field |
+
+<Info>
+  General ledger accounts and vendors are predefined by Ramp. These are uploaded through their respective POST endpoints: general ledger accounts and vendors.
+</Info>
+
+<CodeGroup dropdown>
+```bash Custom fields
+curl \
+  -X POST \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  -d '{"id":"Department","input_type":"SINGLE_CHOICE","is_splittable":"True","name":"Department"}' \
+    'https://api.ramp.com/developer/v1/accounting/fields'
+```
+
+```javascript Custom fields expandable
+const endpoint = 'https://api.ramp.com/developer/v1/accounting/fields'
+
+const response = await fetch(endpoint, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${RAMP_API_TOKEN}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    id: 'Department',
+    input_type: 'SINGLE_CHOICE',
+    is_splittable: 'True',
+    name: 'Department'
+  })
+})
+
+const data = await response.json()
+
+console.log(data)
+```
+
+```python Custom fields expandable
+import requests
+
+endpoint = "https://api.ramp.com/developer/v1/accounting/fields"
+
+headers = {
+  "Accept": "application/json",
+  "Authorization": f"Bearer {RAMP_API_TOKEN}",
+  "Content-Type": "application/json",
+}
+
+payload = {
+  "id": "Department",
+  "input_type": "SINGLE_CHOICE",
+  "is_splittable": "True",
+  "name": "Department"
+}
+
+response = requests.post(
+  endpoint,
+  headers=headers,
+  json=payload,
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+The response returns the id of the new field. Use this id to upload options for the field in the **<u>POST /developer/v1/accounting/field-options</u>** endpoint:
+
+<CodeGroup dropdown>
+```bash Field Options
+curl \
+  -X POST \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  -d '{"field_id":"46910cc3-ab41-4b80-b4a7-94dab9f1b795","options":[{"id":"418","value":"Engineering & Design"},{"id":"514","value":"Sales & Marketing"}]}' \
+    'https://api.ramp.com/developer/v1/accounting/field-options'
+```
+
+```javascript Field Options expandable
+const endpoint = 'https://api.ramp.com/developer/v1/accounting/field-options'
+
+const response = await fetch(endpoint, {
+  method: 'POST',
+  headers: {
+    Authorization: `Bearer ${RAMP_API_TOKEN}`,
+    Accept: 'application/json',
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    field_id: '46910cc3-ab41-4b80-b4a7-94dab9f1b795',
+    options: [
+      {
+        id: '418',
+        value: 'Engineering & Design'
+      },
+      {
+        id: '514',
+        value: 'Sales & Marketing'
+      }
+    ]
+  })
+})
+
+const data = await response.json()
+
+console.log(data)
+```
+
+```python Field Options expandable
+import requests
+
+endpoint = "https://api.ramp.com/developer/v1/accounting/field-options"
+
+headers = {
+  "Accept": "application/json",
+  "Authorization": f"Bearer {RAMP_API_TOKEN}",
+  "Content-Type": "application/json",
+}
+
+payload = {
+  "field_id": "46910cc3-ab41-4b80-b4a7-94dab9f1b795",
+  "options": [
+    {
+      "id": "418",
+      "value": "Engineering & Design"
+    },
+    {
+      "id": "514",
+      "value": "Sales & Marketing"
+    }
+  ]
+}
+
+response = requests.post(
+  endpoint,
+  headers=headers,
+  json=payload,
+)
+
+print(response.json())
+```
+</CodeGroup>
+
+### Object Sync
+
+<Note>
+  Objects cannot be marked as synced via API when using a direct accounting connection
+</Note>
+
+The following objects can be periodically fetched from the API and marked as 'synced' using the Sync Status endpoint once they have been uploaded to the remote system. Objects should be periodically polled for the latest status. Once an object has been marked as synced, it will no longer be visible in the primary Accounting View of the account. We recommend polling every 1–4 hours on weekdays and every 12 hours on weekends for the latest information:
+
+<Card title="Alternative to Polling: Webhooks (Beta)" icon="bell">
+  Instead of polling for ready-to-sync objects, you can use webhooks to receive real-time notifications when transactions and reimbursements become ready to sync. Subscribe to <code>transactions.ready_to_sync</code> and <code>reimbursements.ready_to_sync</code> events to eliminate the need for frequent polling. See our [Webhooks Guide](https://docs.ramp.com/developer-api/v1/webhooks) for setup instructions.
+</Card>
+
+| Object | Behavior |
+|--------|----------|
+| **Bill** | Bills are automatically marked as 'ready to sync' without user action once they meet the criteria. A bill is considered ready to sync when:<br/>• It is not deleted.<br/>• It is either approved or created (based on accounting settings).<br/>• It has not yet been synced to the accounting provider.<br/><br/>To fetch bills that are ready to be synced, use the <code>sync_ready=true</code> query parameter on the Bills API. Attempting to sync a bill that is not ready via the Accounting API will result in an error. |
+| **Bill Payment** | Bill Payments do not currently have their own API object but are nested within the Bill object. A bill payment is considered ready to sync when:<br/>• It is not deleted.<br/>• It is fully paid.<br/><br/>We recommend updating the sync status of the payment once <code>payment_status=PAID</code>. |
+| **Transaction** | Manually marked as 'ready to sync' by users in the Ramp UI.<br/><br/>To fetch transactions that are ready to be synced, set the <code>sync_status</code> query parameter to <code>SYNC_READY</code> on the Transactions API. |
+| **Reimbursement** | Manually marked as 'ready to sync' by users in the Ramp UI.<br/><br/>To fetch reimbursements that are ready to be synced, set the <code>sync_status</code> query parameter to <code>SYNC_READY</code> on the Reimbursements API. |
+| **Transfer** | Once a transfer payment is accepted, it becomes eligible for sync.<br/><br/>To fetch transfers that are ready to be synced, set the <code>sync_status</code> query parameter to <code>SYNC_READY</code> on the Transfers API. |
+| **Cashback Payments** | Automatically marked as 'ready to sync' without user action.<br/><br/>To fetch cashback payments that are ready to be synced, set the <code>sync_status</code> query parameter to <code>SYNC_READY</code> on the Cashbacks API. |
+
+### Sync Failures
+
+In cases when you are unable to sync an object to the remote system, you can use the `sync_failures` parameter on the Sync Status endpoint to convey issues back to the user. These issues will be displayed in the Accounting tab as Export Errors:
+
+<CardGroup cols={2}>
+  <Card title="Step 1: Start Authorization">
+    <img src="/images/Ramp-Card.png" alt="Step 1" style={{ width: "100%", maxWidth: "300px", marginBottom: "1rem" }} />
+  </Card>
+
+  <Card title="Step 2: Approve Access">
+    <img src="/images/Export-Error.png" alt="Step 2" style={{ width: "100%", maxWidth: "300px", marginBottom: "1rem" }} />
+  </Card>
+</CardGroup>
+
+## Migration
+
+<Note>
+  Migrating Accounting Connections will result in a loss of historical chart of accounts codings. Ensure chart of accounts is backed up before proceeding with a migration.
+</Note>
+
+### Pre-Work
+
+Before starting a migration, complete these preparatory steps:
+
+1. Sync Outstanding Data: Ensure all ready-to-sync objects (transactions, bills, reimbursements) are marked as synced via the API or Ramp UI. This avoids losing data during migration.
+
+2. Document Rules and Automations: Export or note all accounting rules, automations, and configurations. These will need to be recreated with the new connection.
+
+### Data Backup
+
+Always backup your data before starting a migration:
+
+3. Fetch and Store the Current Chart of Accounts:
+    - Use the Accounting Custom Fields API to fetch current custom fields.
+    - Use the Accounting GL Accounts API to fetch all active GL accounts.
+    - Use the Accounting Vendors API to fetch vendor data.
+4. Save the fetched data securely for re-upload after creating the new connection.
+
+### Migration
+
+Follow these steps for a successful migration:
+
+<Steps>
+  <Step title="Create New Connection">
+    Set up the new accounting connection using the appropriate method
+  </Step>
+  <Step title="Configure Settings">
+    Configure sync settings, mappings, and rules to match your current setup
+  </Step>
+  <Step title="Test Thoroughly">
+    Test the new connection with a small dataset to ensure everything works correctly
+  </Step>
+  <Step title="Monitor Performance">
+    Monitor the new connection for performance issues or errors
+  </Step>
+  <Step title="Switch Over">
+    Once testing is complete, disable the old connection and enable the new one
+  </Step>
+  <Step title="Verify Data">
+    Verify that all data is syncing correctly in the new connection
+  </Step>
+</Steps>
+
+### Rebuild Accounting Rules
+
+Follow the instructions in this [article](https://help.ramp.com/accounting-rules) to rebuild any accounting automations within the Ramp account.
+
+## Common Questions
+
+<AccordionGroup>
+  <Accordion title="Is it possible to have multiple Accounting Connections active at once as part of a customer migration?">
+    No, this is a known limitation of migrating Ramp accounts between connections.
+  </Accordion>
+  <Accordion title="Are there any limitations to the lookback period for API objects such as Transactions?">
+    There are no lookback limits; all historical objects are available via API.
+  </Accordion>
+  <Accordion title="Can I fetch payments associated with a bill via the API?">
+    Yes, payment details are nested within the Bill object. Use the Bills API to fetch the `payment_status` field and update the sync status accordingly once the payment is completed.
+  </Accordion>
+  <Accordion title="Do users need to configure both Ramp and their finance/ERP systems for integrations to work?">
+    Yes, most integrations require setup on both ends:
+      - Ramp: Users authorize the app with the necessary permissions for the integration use case.
+      - Remote System: Users often need to configure endpoints, set up API access, or install connectors to accept data from Ramp.
+  </Accordion>
+  <Accordion title="Does Ramp enforce encryption for data transmissions?">
+    Yes, Ramp ensures encryption across all data transmissions:
+      - HTTPS Encryption: All API requests and responses are encrypted using HTTPS.
+      - AData Storage: Data stored in Ramp systems is encrypted for security.
+    For additional encryption needs, developers can implement payload-level encryption before sending or receiving data, as required.
+  </Accordion>
+  <Accordion title="Can apps be hosted on Ramp infrastructure?">
+    Currently, apps must be hosted externally, meaning they run on partner infrastructure and integrate with Ramp via APIs. While hosting on Ramp’s infrastructure is not currently supported, it could be considered in the future for specific apps requiring deeper integration or enhanced control.
+  </Accordion>
+</AccordionGroup>
+
+## Planned Improvements
+
+### Planned - H2 2025
+
+Ramp is continuously improving the accounting integration capabilities. Here are some planned improvements for H2 2025:
+
+- Tooling to assist with seamless migrations between systems.
+- Real-time webhooks/alerts for updates to objects such as Transactions.
+- Enhanced Entity Management to improve flexibility during migrations.
+
+<Note>
+  These improvements are planned and subject to change. Check our [changelog](/changelog) for the latest updates.
+</Note>
+
+## Support
+
+Need help with accounting integration?
+
+<Card title="Email Support" icon="paper-plane" href="mailto:support@ramp.com" horizontal>
+  Get help from our developer support team
+</Card>
+
+<Tip>
+  Include your request ID (found in error responses) when contacting support for faster resolution.
+</Tip>

@@ -1,0 +1,107 @@
+---
+title: 'DELETE: Delete a custom accounting field option'
+description: 'Delete a specific custom accounting field option'
+method: 'DELETE'
+endpoint: '/developer/v1/accounting/field-options/{id}'
+---
+
+<TableOfContents />
+
+## Overview
+
+Delete a specific custom accounting field option by ID.
+
+<RequestExample>
+```bash
+curl \
+  -X DELETE \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/field-options/opt_1234567890'
+```
+</RequestExample>
+
+## Path Parameters
+
+<ParamField path="id" type="string" required>
+  The ID of the custom field option to delete.
+</ParamField>
+
+## Response
+
+<ResponseExample>
+```json
+{
+  "data": {
+    "deleted": true,
+    "id": "opt_1234567890"
+  }
+}
+```
+</ResponseExample>
+
+## Response Fields
+
+<ResponseField name="data" type="object">
+  The deletion confirmation.
+</ResponseField>
+
+<ResponseField name="data.deleted" type="boolean">
+  Whether the option was successfully deleted.
+</ResponseField>
+
+<ResponseField name="data.id" type="string">
+  The ID of the deleted option.
+</ResponseField>
+
+<Note>
+  **OAuth scopes required:** `accounting:write`
+</Note>
+
+## Examples
+
+### JavaScript
+
+```javascript
+const optionId = 'opt_1234567890';
+const response = await fetch(`https://api.ramp.com/developer/v1/accounting/field-options/${optionId}`, {
+  method: 'DELETE',
+  headers: {
+    'Accept': 'application/json',
+    'Authorization': `Bearer ${RAMP_API_TOKEN}`
+  }
+});
+
+const data = await response.json();
+console.log(data.data);
+```
+
+### Python
+
+```python
+import requests
+
+option_id = 'opt_1234567890'
+headers = {
+    'Accept': 'application/json',
+    'Authorization': f'Bearer {RAMP_API_TOKEN}'
+}
+
+response = requests.delete(
+    f'https://api.ramp.com/developer/v1/accounting/field-options/{option_id}',
+    headers=headers
+)
+
+data = response.json()
+print(data['data'])
+```
+
+### cURL
+
+```bash
+curl \
+  -X DELETE \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer $RAMP_API_TOKEN" \
+  'https://api.ramp.com/developer/v1/accounting/field-options/opt_1234567890'
+``` 
